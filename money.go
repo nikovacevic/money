@@ -2,6 +2,7 @@
 package money
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"strconv"
 )
@@ -41,12 +42,18 @@ func (m *USD) Scan(val interface{}) error {
 	case string:
 		v, err = strconv.ParseFloat(val.(string), 64)
 		if err != nil {
-			return fmt.Errorf("Invalid string passed to Scan(). %v cannot be parsed to a USD value.", val)
+			return fmt.Errorf("Invalid string passed to Scan(). \"%v\" cannot be parsed to a USD value.", val)
 		}
 	case float64:
 		v = val.(float64)
 	case int:
 		v = float64(val.(int))
+	case []byte:
+		s := string(val.([]byte))
+		v, err = strconv.ParseFloat(s, 64)
+		if err != nil {
+			return fmt.Errorf("Invalid data passed to Scan(). \"%v\" cannot be parsed to a USD value.", s)
+		}
 	}
 	*m = ToUSD(v)
 	return nil
@@ -57,4 +64,11 @@ func (m USD) String() string {
 	x := float64(m)
 	x = x / 100
 	return fmt.Sprintf("$%.2f", x)
+}
+
+// Value converts USD to a DB-friendly value. Although USD is stored in cents,
+// the Value will be a two-decimal numeric type; e.g. $18.00 is stored under
+// the hood by USD as 1800, but Value() would return 18.00 for the DB.
+func (m USD) Value() (driver.Value, error) {
+	return m.Float64(), nil
 }

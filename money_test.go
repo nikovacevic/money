@@ -1,6 +1,7 @@
 package money_test
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"testing"
 
@@ -18,10 +19,12 @@ var scanTests = []struct {
 	{1.345, money.USD(135), nil},
 	{"10", money.USD(1000), nil},
 	{"1.345", money.USD(135), nil},
-	{"1O", money.USD(0), fmt.Errorf("Invalid string passed to Scan(). %v cannot be parsed to a USD value.", "1O")},
+	{[]uint8{49, 56, 46, 48, 48}, money.USD(1800), nil},
+	{[]uint8{49, 50, 46, 115, 100}, money.USD(0), fmt.Errorf("Invalid data passed to Scan(). \"%v\" cannot be parsed to a USD value.", "12.sd")},
+	{"1O", money.USD(0), fmt.Errorf("Invalid string passed to Scan(). \"%v\" cannot be parsed to a USD value.", "1O")},
 }
 
-func TestAdd(t *testing.T) {
+func TestScan(t *testing.T) {
 	for _, test := range scanTests {
 		m := money.NewUSD()
 		err := m.Scan(test.val)
@@ -30,6 +33,27 @@ func TestAdd(t *testing.T) {
 		}
 		if *m != test.exp {
 			t.Errorf("Scan() returned %v. Should return %v.", m, test.exp)
+		}
+	}
+}
+
+var valueTests = []struct {
+	val money.USD
+	exp driver.Value
+	err error
+}{
+	{money.USD(0), 0.00, nil},
+	{money.USD(1850), 18.50, nil},
+}
+
+func TestValue(t *testing.T) {
+	for _, test := range valueTests {
+		drv, err := test.val.Value()
+		if fmt.Sprintf("%s", err) != fmt.Sprintf("%s", test.err) {
+			t.Errorf("Scan() returned error \"%v\". Should return error \"%v\".", err, test.err)
+		}
+		if drv.(float64) != test.exp.(float64) {
+			t.Errorf("Scan() returned %v. Should return %v.", drv, test.exp)
 		}
 	}
 }
