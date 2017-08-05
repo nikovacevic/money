@@ -63,7 +63,7 @@ func (m *USD) Scan(val interface{}) error {
 func (m USD) String() string {
 	x := float64(m)
 	x = x / 100
-	return fmt.Sprintf("$%.2f", x)
+	return fmt.Sprintf("%.2f", x)
 }
 
 // Value converts USD to a DB-friendly value. Although USD is stored in cents,

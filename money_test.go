@@ -100,8 +100,8 @@ var stringTests = []struct {
 	m   money.USD
 	exp string
 }{
-	{money.USD(1), "$0.01"},
-	{money.USD(1234), "$12.34"},
+	{money.USD(1), "0.01"},
+	{money.USD(1234), "12.34"},
 }
 
 func TestString(t *testing.T) {
